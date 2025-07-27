@@ -99,7 +99,6 @@ function App() {
   const [sortBy, setSortBy] = useState("input");
 
   function addFilter(games) {
-    console.log(games);
     switch (sortBy) {
       case "input":
         return games;
