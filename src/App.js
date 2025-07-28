@@ -2,6 +2,11 @@ import { useState } from "react";
 import nintendoLogo from "./nintendo.png";
 import logo from "./logo.png";
 
+/**
+ * The initial state that contains 3 dummy users, all have game collections
+ * All games have individual IDs and they are categorized by platforms.
+ * All games have playing status, swapped status, original owner
+ */
 const initialData = [
   {
     username: "user1",
@@ -89,6 +94,17 @@ const initialData = [
 ];
 
 function App() {
+  /**
+   * State handler:
+   * -loggedIn: for traccking the login status
+   * -startlogin: for tracking when the user clicks on the login button
+   * -curUser: is the actual user
+   * -userData: initial data with all users and games and then we keep this updated for later logins
+   * gameToSwap: the game we will swap with other users
+   * keyword: the keyword to search games with the search field
+   * openAddGameForm: to keep track if the Add game button was clicked
+   * sortBy: for sorting the game list
+   */
   const [loggedIn, setLoggedIn] = useState(false);
   const [startLogin, setStartLogin] = useState(false);
   const [curUser, setCurUser] = useState(null);
@@ -98,6 +114,12 @@ function App() {
   const [openAddGameForm, setOpenAddGameForm] = useState(false);
   const [sortBy, setSortBy] = useState("input");
 
+  /**
+   * It handles the game list sorting
+   * Options: input 'no order', 'name', 'swapped', 'playing', 'platform'
+   * @param {Array} games - The game list
+   * @returns - The ordered game list
+   */
   function addFilter(games) {
     switch (sortBy) {
       case "input":
@@ -122,6 +144,10 @@ function App() {
 
   const gamesToShow = curUser ? addFilter(filteredGames) : null;
 
+  /**
+   *This function updates the current user data and the global 'userData' list
+   * @param {Object} updatedUser - The updated user
+   */
   function updateUserData(updatedUser) {
     setCurUser(updatedUser);
     setUserData((data) =>
@@ -131,6 +157,10 @@ function App() {
     );
   }
 
+  /**
+   * It handles the playing status of the selected game
+   * @param {Object} curGame - The selected game
+   */
   function handlePlayingStatus(curGame) {
     let confirmed;
 
@@ -152,6 +182,10 @@ function App() {
     }
   }
 
+  /**
+   * It handles the removal of the selected game
+   * @param {Object} curGame - The selected game
+   */
   function handleRemoval(curGame) {
     const confirmed = window.confirm(
       "Are you sure that you want to delete this game from your collection?"
@@ -167,6 +201,10 @@ function App() {
     }
   }
 
+  /**
+   * It opens/closes the swap menu of the selected game
+   * @param {Object} curGame - The selected game
+   */
   function handleSwapMenu(curGame) {
     const updatedGames = curUser.games.map((game) =>
       game.id === curGame.id
@@ -178,6 +216,12 @@ function App() {
     setGameToSwap(curGame);
   }
 
+  /**
+   * It starts the swap between two users
+   * If the game is swapped, it will return to the original user (the game will be removed from the current user)
+   * If not, it will be copied to the selected user and the original remains with the current user
+   * @param {string} selectedUser - The username of the selected user
+   */
   function handleSwapGame(selectedUser) {
     const confirmed = window.confirm(
       `Are you sure that you want to swap this game with ${selectedUser}?`
@@ -262,15 +306,26 @@ function App() {
     }
   }
 
+  /**
+   * It sets the keyword for the search
+   * @param {string} keyword - The keyword for search
+   */
   function handleSearch(keyword) {
     setKeyWord(keyword);
   }
 
+  /**
+   * It handles the game from opening (modal window)
+   */
   function handleOpenAddGameForm() {
     setOpenAddGameForm(!openAddGameForm);
-    console.log(openAddGameForm);
   }
 
+  /**
+   * It renders the game card for each games
+   * @param {Object} game - the game object for all games in the array
+   * @returns The game card and the swap function
+   */
   function renderGameCard(game) {
     return (
       <GameCard
@@ -296,7 +351,7 @@ function App() {
       <NavPanel>
         <Logo />
         {loggedIn && <Search onSearch={handleSearch} />}
-        <Login
+        <UserMenu
           isLoginPanelOpen={startLogin}
           setLoginPanelOpen={setStartLogin}
           onLoggedIn={loggedIn}
@@ -309,6 +364,7 @@ function App() {
       {loggedIn ? <Stats curUser={curUser} /> : ""}
       <Main onLoggedIn={loggedIn} isLoginPanelOpen={startLogin}>
         <AddGameForm
+          key={openAddGameForm}
           openAddGameForm={openAddGameForm}
           onOpenAddGameForm={handleOpenAddGameForm}
           curUser={curUser}
@@ -339,10 +395,27 @@ function App() {
   );
 }
 
+/**
+ * This is a wrapper component for the nav bar
+ * @param {Object} props - The props for this comp
+ * @returns {JSX.Element} The HTML elements in the nav bar
+ */
 function NavPanel({ children }) {
   return <nav className="nav-panel">{children}</nav>;
 }
 
+/**
+ * It showes the statistics for the current user:
+ * -All games
+ * -Played games
+ * -Sent games
+ * -Received games
+ * -Percentage of own games
+ * -Percentage of borrowed games
+ * @param {Object} props - The props for this component
+ * @param {Object} props.curGame - The current user
+ * @returns {JSX.Element} - The statistics panel
+ */
 function Stats({ curUser }) {
   return (
     <nav className="stats-panel">
@@ -415,6 +488,10 @@ function Stats({ curUser }) {
   );
 }
 
+/**
+ * It shows the logo
+ * @returns {JSX.Element} - The logo div
+ */
 function Logo() {
   return (
     <div className="logo">
@@ -423,6 +500,12 @@ function Logo() {
   );
 }
 
+/**
+ * Seaarch component the uses a keyword
+ * @param {Object} props - The props for the component
+ * @param {function} props.onSearch - Callback that runs when we use the search field
+ * @returns {JSX.Element} - Input field for search
+ */
 function Search({ onSearch }) {
   return (
     <input
@@ -434,7 +517,21 @@ function Search({ onSearch }) {
   );
 }
 
-function Login({
+/**
+ * This is the UserMenu panel
+ * When the user is not logged in, the button shows "Login"
+ * When the user is logged in, it shows the username and the log off option and the add game button
+ * @param {Object} props - The props for the component
+ * @param {boolean} props.isLoginPanelOpen - Is the login panel open?
+ * @param {function} props.setLoginPanelOpen - Sets the login panel status
+ * @param {boolean} props.onLoggedIn - The status of the login
+ * @param {Object|null} props.curUser - The current user
+ * @param {function} props.setCurUser - Changes the current user
+ * @param {function} props.onSetLoggedIn - Changes the LoggedIn status
+ * @param {function} props.onOpenAddGameForm - Open the modal window for adding a new game
+ * @returns {JSX.Element} Based on conditions - Login/Log off buttons, username and Add game button
+ */
+function UserMenu({
   isLoginPanelOpen,
   setLoginPanelOpen,
   onLoggedIn,
@@ -477,10 +574,26 @@ function Login({
   );
 }
 
+/**
+ * It opens the add game form
+ * @param {Object} props - The props for this component
+ * @param {function} props.onOpenAddGameForm - Sets the modal windows status for the add game form
+ * @returns {JSX.Element} - Add game button
+ */
 function AddGameButton({ onOpenAddGameForm }) {
   return <button onClick={onOpenAddGameForm}>Add game</button>;
 }
 
+/**
+ * This is to add a new game to the current user
+ * @param {Object} props - This is the props for component
+ * @param {boolean} props.openAddGameForm - The status of the add game form modal window
+ * @param {Object} props.curUser - This is the current user object
+ * @param {function} props.onOpenAddGameForm - Set the modal windows status for adding a new game
+ * @param {function} props.setOpenAddGameForm - Sets open/closed for the add new game modal windows
+ * @param {function} props.updateUserData - Function to update the user data, receives user object
+ * @returns {JSX.Element} - The add new game form in modal window
+ */
 function AddGameForm({
   openAddGameForm,
   onOpenAddGameForm,
@@ -544,12 +657,12 @@ function AddGameForm({
           ></input>
           <p>Platform</p>
           <select
-            valaue={platform}
+            value={platform}
             onChange={(e) => setPlatform(e.target.value.toLowerCase())}
           >
-            <option>Playstation</option>
-            <option>Nintendo</option>
-            <option>Xbox</option>
+            <option value="playstation">Playstation</option>
+            <option value="nintendo">Nintendo</option>
+            <option value="xbox">Xbox</option>
           </select>
           <button>Add game</button>
         </form>
@@ -558,6 +671,14 @@ function AddGameForm({
   );
 }
 
+/**
+ * The login form
+ * @param {Object} props - Props for this component
+ * @param {function} props.onSetLoggedIn - Sets the login status true/false
+ * @param {function} props.setCurUser - Sets the current user
+ * @param {Object} props.userData - The initial for the first login/updated user data for later logins
+ * @returns {JSX.Element} The login for input fields
+ */
 function LoginPanel({ onSetLoggedIn, setCurUser, userData }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -598,6 +719,18 @@ function LoginPanel({ onSetLoggedIn, setCurUser, userData }) {
   );
 }
 
+/**
+ * The main component (Conditional rendering):
+ * -Welcome
+ * -Login panel
+ * -Add game form
+ * -Game cards
+ * @param {Object} props - The props for this component
+ * @param {boolean} props.onLoggedIn - Login status false/true
+ * @param {boolean} props.isLoginPanelOpen - The status of the login panel
+ * @param {React.ReactNode} props.children - Components: Welcome, AddGameForm, LoginPanel, GameCard
+ * @returns {JSX.Element} - Returns the children
+ */
 function Main({ children, onLoggedIn, isLoginPanelOpen }) {
   return (
     <main
@@ -608,6 +741,13 @@ function Main({ children, onLoggedIn, isLoginPanelOpen }) {
   );
 }
 
+/**
+ * The drop down menu to sort the game list
+ * @param {Object} props - The props for this component
+ * @param {string} props.sortBy - The criteria for sorting
+ * @param {function} props.setSortBy - Callback to set sorting criteria
+ * @returns {JSX.Element} - The drop down menu
+ */
 function Sort({ sortBy, setSortBy }) {
   return (
     <div className="sort-panel">
@@ -626,6 +766,10 @@ function Sort({ sortBy, setSortBy }) {
   );
 }
 
+/**
+ * The Welcome page
+ * @returns {JSX.Element} - The welcome text
+ */
 function Welcome() {
   return (
     <div className="welcome">
@@ -634,6 +778,25 @@ function Welcome() {
   );
 }
 
+/**
+ * This is the card component for each games
+ * It shows the image, the bar with the button, title, platform and the switch menu
+ * Game bar buttons:
+ * -Playing
+ * -Removal
+ * -Swap
+ * Shows if the game is swapped (and also the original user)
+ * If the swap menu is open (game.openSwap), shows the SwapGame component (children)
+ * @param {Object} props - The props for this component
+ * @param {Object} props.game - The game object that the card shows
+ * @param {function} prop.onHandlePlayingStatus - Callback to set the playing status on games
+ * @param {function} props.onHandleRemoval - Callback to remove a game
+ * @param {function} props.onHandleSwapMenu - Callback to open/close Swap menu
+ * @param {Object} props.curUser - The actual user
+ * @param {React.ReactNode} props.children - The children components: SwapGame if openSwap=true
+ * @param {Object} props - The props for this component
+ * @returns {JSX.Element} - The Game cards
+ */
 function GameCard({
   children,
   game,
@@ -733,6 +896,18 @@ function GameCard({
   );
 }
 
+/**
+ * This is the component to handle swap games between users
+ * Drop down menu for games to select user
+ * If swapped === true, only original owner appears
+ * On submit form calls the onSwapgame callback with the selected user
+ * @param {Object} props - The props for this component
+ * @param {Array} props.userData - It gives the user data (all users)
+ * @param {Object} props.curUser - The current user
+ * @param {function} props.onSwapGame - The callback that starts the swap logic
+ * @param {Object} props.gameToSwap - The selected game for swap
+ * @returns {JSX.Element} - Shows the swap drop down for games
+ */
 function SwapGame({ userData, curUser, onSwapGame, gameToSwap }) {
   const [selectedUser, setSelectedUser] = useState(() => {
     const filteredUser = userData.filter(
