@@ -18,16 +18,16 @@
 # 🛠️ Technology
 
 - React (Functional Components + Hooks (useState, useEffect, useRef, custom hooks))
-- JavaScript (ES6+)
+- JavaScript
 - CSS
 - LocalStorage
 
 # 🧩 Main Components
 
--App (Main component for rendering and handle states)
--GameCard (Showing game cards for each game)
--SwapGame (This is the component to handle swap games between users)
--AddGameForm (Add new game)
+- App (Main component for rendering and handle states)
+- GameCard (Showing game cards for each game)
+- SwapGame (This is the component to handle swap games between users)
+- AddGameForm (Add new game)
 
 # 👥 Users for testing
 
