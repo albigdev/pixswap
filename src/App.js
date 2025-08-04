@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import nintendoLogo from "./nintendo.png";
 import logo from "./logo.png";
 
@@ -93,26 +93,102 @@ const initialData = [
   },
 ];
 
+/**
+ * This is a custom hook to return initial state or local storage data if exists
+ * @param {Object} initialState - The initial data for the app
+ * @param {Array} key - The key name for the local storage
+ * @returns The local storage value or the initial state
+ */
+function useLocalStorageState(initialState, key) {
+  const [value, setValue] = useState(function () {
+    const storedValue = localStorage.getItem(key);
+    return storedValue ? JSON.parse(storedValue) : initialState;
+  });
+
+  useEffect(
+    function () {
+      localStorage.setItem(key, JSON.stringify(value));
+    },
+    [value, key]
+  );
+
+  return [value, setValue];
+}
+
+/**
+ * The timer to track inactivity and initiate action after timer ends
+ * @param {Function} onLogout - Callback function for the action when timer ends
+ * @param {Boolean} start - Boolean value to start the timer conditionally
+ * @returns The remaining time (remaining state)
+ * Note: I needed to add isLoggedout to avoid running onLogout twice (alert in callback)
+ */
+function useAutoLogOutWithTimer(onLogout, start) {
+  const interval = useRef(null);
+  const isLoggedOut = useRef(false);
+  const timeout = 3 * 60 * 1000;
+  const [remaining, setRemaining] = useState(timeout);
+
+  useEffect(() => {
+    const resetTimer = () => {
+      setRemaining(timeout);
+    };
+
+    window.addEventListener("click", resetTimer);
+
+    if (start) {
+      interval.current = setInterval(() => {
+        setRemaining((prevRemaining) => {
+          if (prevRemaining <= 0) {
+            if (!isLoggedOut.current) {
+              onLogout();
+              clearInterval(interval.current);
+              isLoggedOut.current = true;
+            }
+            return 0;
+          }
+          return prevRemaining - 1000;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      clearInterval(interval.current);
+      window.removeEventListener("click", resetTimer);
+      isLoggedOut.current = false;
+    };
+  }, [onLogout, start, timeout]);
+
+  return Math.floor(remaining / 1000);
+}
+
+/**
+ * State handlers:
+ * -loggedIn: for traccking the login status
+ * -startlogin: for tracking when the user clicks on the login button
+ * -curUser: is the actual user
+ * -userData: initial data with all users and games and then we keep this updated for later logins
+ * -gameToSwap: the game we will swap with other users
+ * -keyword: the keyword to search games with the search field
+ * -openAddGameForm: to keep track if the Add game button was clicked
+ * -sortBy: for sorting the game list
+ * @returns All componnents in the App
+ */
 function App() {
-  /**
-   * State handler:
-   * -loggedIn: for traccking the login status
-   * -startlogin: for tracking when the user clicks on the login button
-   * -curUser: is the actual user
-   * -userData: initial data with all users and games and then we keep this updated for later logins
-   * gameToSwap: the game we will swap with other users
-   * keyword: the keyword to search games with the search field
-   * openAddGameForm: to keep track if the Add game button was clicked
-   * sortBy: for sorting the game list
-   */
   const [loggedIn, setLoggedIn] = useState(false);
   const [startLogin, setStartLogin] = useState(false);
   const [curUser, setCurUser] = useState(null);
-  const [userData, setUserData] = useState(initialData);
+  const [userData, setUserData] = useLocalStorageState(initialData, "userData");
   const [gameToSwap, setGameToSwap] = useState("");
   const [keyword, setKeyWord] = useState("");
   const [openAddGameForm, setOpenAddGameForm] = useState(false);
   const [sortBy, setSortBy] = useState("input");
+
+  const secondsLeft = useAutoLogOutWithTimer(() => {
+    setCurUser(null);
+    setLoggedIn(false);
+    setStartLogin(false);
+    alert("You have been logged out due to inactivity.");
+  }, loggedIn);
 
   /**
    * It handles the game list sorting
@@ -359,6 +435,7 @@ function App() {
           curUser={curUser}
           setCurUser={setCurUser}
           onOpenAddGameForm={handleOpenAddGameForm}
+          secondsLeft={secondsLeft}
         />
       </NavPanel>
       {loggedIn ? <Stats curUser={curUser} /> : ""}
@@ -529,6 +606,7 @@ function Search({ onSearch }) {
  * @param {function} props.setCurUser - Changes the current user
  * @param {function} props.onSetLoggedIn - Changes the LoggedIn status
  * @param {function} props.onOpenAddGameForm - Open the modal window for adding a new game
+ * @param {function} secondsLeft - The timer from the App component which triggers logout
  * @returns {JSX.Element} Based on conditions - Login/Log off buttons, username and Add game button
  */
 function UserMenu({
@@ -539,6 +617,7 @@ function UserMenu({
   setCurUser,
   onSetLoggedIn,
   onOpenAddGameForm,
+  secondsLeft,
 }) {
   function handleStartLogin() {
     setLoginPanelOpen(!isLoginPanelOpen);
@@ -559,7 +638,8 @@ function UserMenu({
             <h1>{curUser?.username}</h1>
             {/* <p>&#124;</p> */}
             <p role="button" onClick={handleLogOff}>
-              Log off
+              Log off &bull; {Math.floor(secondsLeft / 60)}:
+              {(secondsLeft % 60).toString().padStart(2, "0")}
             </p>
           </>
         ) : (
