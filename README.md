@@ -6,7 +6,7 @@
 # 🚀 Functions
 
 - 👤 Login function with 3 pre-defined users
-- 🎮 Add new game to the game collection
+- 🎮 Add new game to the game collection with API (RAWG Games)
 - 🕹️ Handling of the gaming status: **playing**, **swapped**, **originalOwner**
 - 🔍 Search games based on title
 - 🔄 Swap games with other users
@@ -21,13 +21,14 @@
 - JavaScript
 - CSS
 - LocalStorage
+- RAWG.IO API for game database
 
 # 🧩 Main Components
 
 - App (Main component for rendering and handle states)
 - GameCard (Showing game cards for each game)
 - SwapGame (This is the component to handle swap games between users)
-- AddGameForm (Add new game)
+- AddGameForm (Add new game with API call from https://rawg.io/apidocs)
 
 # 👥 Users for testing
 
