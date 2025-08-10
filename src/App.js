@@ -1,6 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import nintendoLogo from "./nintendo.png";
 import logo from "./logo.png";
+
+/**
+ * The API key and url for https://rawg.io/apidocs
+ */
+const API_KEY = "901cfc4f1ae641e2a3b90ea80b113174";
+const API_URL = "https://api.rawg.io/api/games";
 
 /**
  * The initial state that contains 3 dummy users, all have game collections
@@ -440,14 +446,16 @@ function App() {
       </NavPanel>
       {loggedIn ? <Stats curUser={curUser} /> : ""}
       <Main onLoggedIn={loggedIn} isLoginPanelOpen={startLogin}>
-        <AddGameForm
-          key={openAddGameForm}
-          openAddGameForm={openAddGameForm}
-          onOpenAddGameForm={handleOpenAddGameForm}
-          curUser={curUser}
-          updateUserData={updateUserData}
-          setOpenAddGameForm={setOpenAddGameForm}
-        />
+        {openAddGameForm && (
+          <AddGameForm
+            key={openAddGameForm}
+            openAddGameForm={openAddGameForm}
+            onOpenAddGameForm={handleOpenAddGameForm}
+            curUser={curUser}
+            updateUserData={updateUserData}
+            setOpenAddGameForm={setOpenAddGameForm}
+          />
+        )}
         {!loggedIn && !startLogin && <Welcome />}
         {!loggedIn && startLogin && (
           <LoginPanel
@@ -665,14 +673,20 @@ function AddGameButton({ onOpenAddGameForm }) {
 }
 
 /**
- * This is to add a new game to the current user
+ * This is to add a new game to the current user from the RAWG database
  * @param {Object} props - This is the props for component
  * @param {boolean} props.openAddGameForm - The status of the add game form modal window
  * @param {Object} props.curUser - This is the current user object
  * @param {function} props.onOpenAddGameForm - Set the modal windows status for adding a new game
  * @param {function} props.setOpenAddGameForm - Sets open/closed for the add new game modal windows
  * @param {function} props.updateUserData - Function to update the user data, receives user object
- * @returns {JSX.Element} - The add new game form in modal window
+ * @param {function} reducer - Reducer function for the useReducer state handling
+ *  State shape:
+ *  - {string} gameTitle: Current searhc input or selected game title
+ *  - {string} imgURL - URL for the selected game img
+ *  - {string} platform - selected platform
+ *  - {Array<Object>} results - Autocomplete searc h results from RAWG API
+ * @returns {JSX.Element} - The add new game form in modal window + autocomplete list
  */
 function AddGameForm({
   openAddGameForm,
@@ -681,9 +695,60 @@ function AddGameForm({
   updateUserData,
   setOpenAddGameForm,
 }) {
-  const [gameTitle, setGameTitle] = useState("");
-  const [imgUrl, setImgUrl] = useState("");
-  const [platform, setPlatform] = useState("playstation");
+  const initialState = {
+    gameTitle: "",
+    imgUrl: "",
+    platform: "playstation",
+    results: [],
+  };
+
+  function reducer(state, action) {
+    switch (action.type) {
+      case "searchTitle":
+        return { ...state, gameTitle: action.payload };
+      case "setResults":
+        return { ...state, results: action.payload };
+      case "changePlatform":
+        return { ...state, platform: action.payload };
+      case "selectGame":
+        return {
+          ...state,
+          gameTitle: action.payload.name,
+          imgUrl: action.payload.background_image,
+          results: [],
+        };
+
+      default:
+        return state;
+    }
+  }
+
+  const [{ gameTitle, imgUrl, platform, results }, dispatch] = useReducer(
+    reducer,
+    initialState
+  );
+
+  useEffect(
+    function () {
+      if (gameTitle.length < 3) return;
+
+      async function fetchGames() {
+        try {
+          const res = await fetch(
+            `${API_URL}?key=${API_KEY}&search=${gameTitle}&page_size=10`
+          );
+          const data = await res.json();
+          dispatch({ type: "setResults", payload: data.results });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      fetchGames();
+    },
+    [gameTitle]
+  );
+
+  console.log(results);
 
   const newGame = {
     id: crypto.randomUUID(),
@@ -705,8 +770,6 @@ function AddGameForm({
 
     updateUserData(updatedCurUser);
     setOpenAddGameForm(false);
-    setGameTitle("");
-    setImgUrl("");
   }
 
   return (
@@ -723,22 +786,47 @@ function AddGameForm({
           <p>Title</p>
           <input
             value={gameTitle}
-            onChange={(e) => setGameTitle(e.target.value)}
+            onChange={(e) =>
+              dispatch({ type: "searchTitle", payload: e.target.value })
+            }
             placeholder="Title"
             type="text"
             required
-          ></input>
-          <p>Cover image url</p>
-          <input
-            value={imgUrl}
-            onChange={(e) => setImgUrl(e.target.value)}
-            placeholder="Cover image url"
-            type="text"
-          ></input>
+          />
+          {results.length > 0 && (
+            <ul className="autocomplete-list">
+              {results.map((game) => (
+                <li
+                  key={game.id}
+                  className="autocomplete-item"
+                  onClick={() =>
+                    dispatch({ type: "selectGame", payload: game })
+                  }
+                >
+                  <img
+                    src={game.background_image}
+                    alt={game.name}
+                    style={{
+                      width: "40px",
+                      height: "auto",
+                      marginRight: "0.5rem",
+                      borderRadius: "4px",
+                    }}
+                  />
+                  {game.name}
+                </li>
+              ))}
+            </ul>
+          )}
           <p>Platform</p>
           <select
             value={platform}
-            onChange={(e) => setPlatform(e.target.value.toLowerCase())}
+            onChange={(e) =>
+              dispatch({
+                type: "changePlatform",
+                payload: e.target.value.toLowerCase(),
+              })
+            }
           >
             <option value="playstation">Playstation</option>
             <option value="nintendo">Nintendo</option>

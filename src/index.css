@@ -248,6 +248,36 @@ body {
   cursor: pointer;
 }
 
+.autocomplete-list {
+  max-height: 15rem;
+  overflow-y: auto;
+  background-color: var(--color-background-500);
+  font-size: 1.6rem;
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: background-color 0.2s ease;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--color-primary-light);
+}
+
+.autocomplete-item.active {
+  background-color: var(--color-primary);
+}
+
+.autocomplete-empty {
+  padding: 1rem 1.5rem;
+  color: var(--color-text-dark);
+  font-style: italic;
+}
+
 .login {
   font-family: "Pixelify Sans", sans-serif;
   justify-self: end;
@@ -354,7 +384,7 @@ body {
   max-width: 42rem;
   background-color: var(--color-background-500);
   border-radius: 0.9rem;
-  overflow: scroll;
+  overflow: hidden;
   position: relative;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition: 0.5s all;
