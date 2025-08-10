@@ -700,12 +700,13 @@ function AddGameForm({
     imgUrl: "",
     platform: "playstation",
     results: [],
+    isTyping: true,
   };
 
   function reducer(state, action) {
     switch (action.type) {
       case "searchTitle":
-        return { ...state, gameTitle: action.payload };
+        return { ...state, gameTitle: action.payload, isTyping: true };
       case "setResults":
         return { ...state, results: action.payload };
       case "changePlatform":
@@ -716,6 +717,7 @@ function AddGameForm({
           gameTitle: action.payload.name,
           imgUrl: action.payload.background_image,
           results: [],
+          isTyping: false,
         };
 
       default:
@@ -723,14 +725,12 @@ function AddGameForm({
     }
   }
 
-  const [{ gameTitle, imgUrl, platform, results }, dispatch] = useReducer(
-    reducer,
-    initialState
-  );
+  const [{ gameTitle, imgUrl, platform, results, isTyping }, dispatch] =
+    useReducer(reducer, initialState);
 
   useEffect(
     function () {
-      if (gameTitle.length < 3) return;
+      if (!isTyping || gameTitle.length < 3) return;
 
       async function fetchGames() {
         try {
@@ -745,7 +745,7 @@ function AddGameForm({
       }
       fetchGames();
     },
-    [gameTitle]
+    [gameTitle, isTyping]
   );
 
   console.log(results);
