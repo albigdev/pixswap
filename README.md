@@ -1,6 +1,6 @@
 # Pixswap - Swap your games with friends and keep track of them
 
-- Pixswap is a React based (larning) project where users can swap games with each other
+- Pixswap is a React based (learning) project where users can swap games with each other
 - You can test all functions on https://pixswapgames.netlify.app/
 
 # 🚀 Functions
@@ -17,7 +17,7 @@
 
 # 🛠️ Technology
 
-- React (Functional Components + Hooks (useState, useEffect, useRef, custom hooks))
+- React (Functional Components + Hooks (useState, useEffect, useRef, useReducer custom hooks))
 - JavaScript
 - CSS
 - LocalStorage
@@ -40,7 +40,7 @@
 
 - Option to create new user (Register)
 - Backend integration (own API)
-- Responsive design (mobile, tabled, smaller screens)
+- Responsive design (mobile, tablet, smaller screens)
 
 # 🙌 Acknowledgments
 
