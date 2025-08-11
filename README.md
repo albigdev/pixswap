@@ -17,7 +17,7 @@
 
 # 🛠️ Technology
 
-- React (Functional Components + Hooks (useState, useEffect, useRef, useReducer custom hooks))
+- React (Functional Components + Hooks (useState, useEffect, useRef, useReducer and custom hooks))
 - JavaScript
 - CSS
 - LocalStorage
